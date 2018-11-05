@@ -8,7 +8,6 @@ import msgpack
 import jerakia
 from jerakia import render
 
-
 class TestClient(unittest.TestCase):
 
     def setUp(self):
@@ -127,6 +126,22 @@ class TestClient(unittest.TestCase):
             self.assertIsNotNone(test_out)
             expected_test_out = '{' + "fieldA: 'sesame'" + ', ' + "fieldB: test" + '}'+ '\n'
             self.assertEqual(test_out, expected_test_out)
+
+    @mock.patch('jerakia.client.requests.get', side_effect=mocked_requests_get_json)
+    def test_override(self, mock_lookup):
+        """
+        Test override answers from file
+        """
+        data_file = path.join(self.test_dir, 'defaults.yml')
+        data = {"common_open": "wrongAnswer"}
+
+        with open(data_file, 'w') as file_data:
+            yaml.dump(data, file_data, default_flow_style=True)
+
+        instance = jerakia.client.Client(token=self.token)
+        response_dict = instance.lookup(key='open',namespace='common',content_type='json')
+        response_override = instance.override(data_file)
+        self.assertEqual(response_override["common_open"], response_dict["payload"])
 
 if __name__ == '__main__':
     unittest.main()

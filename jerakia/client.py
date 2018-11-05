@@ -104,3 +104,22 @@ class Client(object):
         else:
             raise ClientError("""Unkown content-type header recieved from jerakia
             server: {}""".format(response.headers['content-type']))
+
+    def override(self, data_file):
+        with open(data_file, 'r') as file_data:
+            default_data = yaml.safe_load(file_data)
+            output_data = default_data
+
+            for lookup_key in default_data.keys():
+                #
+                # TODO: IMPROVE THIS!
+                # We need to be able to infer the key, namespace and metadata from the keys in the 'defaultsdata' file.
+                #
+                namespace, key = lookup_key.split('_')
+
+                lookup_result = self.lookup(namespace, key=key, content_type='json')
+
+                if lookup_result['found']:
+                    output_data.update({lookup_key: lookup_result['payload']})
+
+        return output_data
