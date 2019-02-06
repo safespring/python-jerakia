@@ -103,8 +103,8 @@ class TestClient(unittest.TestCase):
         """
         instance = jerakia.Client(token=self.token)
         expected_dict = {
-            "found": "true",
-            "payload": "sesame"
+            b"found": b"true",
+            b"payload": b"sesame"
         }
         response_dict = instance.lookup(key='open',namespace='common',content_type='msgpack')
         # Check the contents of the response
@@ -123,10 +123,11 @@ class TestClient(unittest.TestCase):
 
         fields = {'it': 'common/test'}
         if 'it' in fields:
-            test_out = render.render(template_path=config_file_path, jerakia_instance=instance, metadata_dict=dict(env='dev'), data=fields)
+            test_out = str(render.render(template_path=config_file_path, jerakia_instance=instance, metadata_dict=dict(env='dev'), data=fields))
             self.assertIsNotNone(test_out)
-            expected_test_out = '{' + "fieldA: 'sesame'" + ', ' + "fieldB: test" + '}'+ '\n'
+            expected_test_out = str('b"{' + "fieldA: 'b'sesame''" + ', ' + "fieldB: test" + '}'+ '\\n"')
             self.assertEqual(test_out, expected_test_out)
+
 
 if __name__ == '__main__':
     unittest.main()
