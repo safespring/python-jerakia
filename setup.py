@@ -18,6 +18,7 @@ setup(
         'six',
         'cryptography>=2.2.1',
         'pyOpenSSL'
+        'future'
     ],
     entry_points='''
         [console_scripts]

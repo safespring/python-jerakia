@@ -1,10 +1,12 @@
 """
 lib for rendering jinja templates using Jerakia lookups
 """
-
+from __future__ import unicode_literals
 import sys
 import os
+import json
 from jinja2 import Environment, FileSystemLoader, Template
+from builtins import str
 from .client import Client,ClientError
 from jinja2.ext import Extension
 
@@ -51,11 +53,12 @@ def retrieveJerakia(item):
 
     if len(ret) == 1:
         try:
-            return response['payload'].encode('ascii', 'ignore')
+            return str(response['payload'].encode('ascii', 'ignore'))
         except Exception as detail:
             print('The Jerakia lookup resulted in an empty response:', detail)
     else:
         try:
+            #[x.decode('utf-8', 'ignore') for x in ret]
             [x.encode('ascii', 'ignore') for x in ret]
             return ret
         except Exception as detail:

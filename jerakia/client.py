@@ -1,9 +1,11 @@
+from __future__ import unicode_literals
 import os.path
 import sys
 import requests
 import msgpack
 import yaml
-
+import json
+from builtins import str
 
 def merge_dicts(*dicts):
     result = {}
