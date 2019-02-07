@@ -1,13 +1,17 @@
+from __future__ import unicode_literals
 import shutil, tempfile
 from os import path
 import sys
 import yaml
+import json
 import unittest
 import mock
 import msgpack
 import jerakia
+import io
 from jerakia import render
 
+PY3 = sys.version_info[0] == 3
 
 class TestClient(unittest.TestCase):
 
@@ -44,7 +48,7 @@ class TestClient(unittest.TestCase):
 
     def test_fromfile_config(self):
         config_file_path = path.join(self.test_dir, 'jerakia_config.yml')
-        with open(config_file_path, 'w') as outfile:
+        with io.open(config_file_path, mode='w', encoding="utf-8") as outfile:
             yaml.dump(self.file_config, outfile, default_flow_style=False)
 
         instance = jerakia.Client.fromfile(config_file_path)
@@ -116,18 +120,24 @@ class TestClient(unittest.TestCase):
         Test render occurs successfully
         """
         config_file_path = path.join(self.test_dir, 'render_file.yml')
-        with open(config_file_path, 'w') as outfile:
-            yaml.dump(self.render_file, outfile, default_flow_style=True)
+        with io.open(config_file_path, mode="w", encoding="utf-8") as outfile:
+            if PY3:
+                data = json.dumps(self.render_file)
+            else:
+                data = json.dumps(self.render_file).decode('utf-8')
+            outfile.write(data)
 
         instance = jerakia.Client(token=self.token)
 
-        fields = {'it': 'common/test'}
+        fields = {b'it': b'common/test'}
         if 'it' in fields:
-            test_out = str(render.render(template_path=config_file_path, jerakia_instance=instance, metadata_dict=dict(env='dev'), data=fields))
+            test_out = render.render(template_path=config_file_path, jerakia_instance=instance, metadata_dict=dict(env='dev'), data=fields)
             self.assertIsNotNone(test_out)
-            expected_test_out = str('b"{' + "fieldA: 'b'sesame''" + ', ' + "fieldB: test" + '}'+ '\\n"')
+            
+            #expected_test_out = str('b"{' + "fieldA: 'b'sesame''" + ', ' + "fieldB: test" + '}'+ '\\n"')
+            #expected_test_out = '''b"{fieldA: 'sesame', fieldB: test}\\n"'''
+            expected_test_out = '{"fieldB": "test", "fieldA": "sesame"}'
             self.assertEqual(test_out, expected_test_out)
-
 
 if __name__ == '__main__':
     unittest.main()

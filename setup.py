@@ -17,7 +17,7 @@ setup(
         'pyaml',
         'six',
         'cryptography>=2.2.1',
-        'pyOpenSSL'
+        'pyOpenSSL',
         'future'
     ],
     entry_points='''
