@@ -14,7 +14,6 @@ matrix:
     - pip install mypy
     script:
     - flake8
-    - mypy . --ignore-missing-imports
     after_success:
     - pytest tests
   - os: osx
