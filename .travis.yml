@@ -25,7 +25,9 @@ matrix:
       - pip3 install -e .
       - pip install pytest
   allow_failures:
-   - script: flake8
+    - python: 3.7
+      script: flake8
+  fast_finish: true
 
 install:
   - python setup.py -q install

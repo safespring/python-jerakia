@@ -15,6 +15,7 @@ setup(
         'mock',
         'jinja2',
         'pyaml',
+        'yaml',
         'six',
         'cryptography>=2.2.1',
         'pyOpenSSL',
