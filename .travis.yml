@@ -21,7 +21,9 @@ matrix:
       - pytest tests
     - os: osx
       language: sh
-      install: pip3 install -e .
+      install: 
+      - pip3 install -e .
+      - pip install pytest
   allow_failures:
    - script: flake8
 
