@@ -85,16 +85,9 @@ def lookup(namespace,key,token,port,type,host,protocol,policy,metadata,configfil
         response = jerakiaobj.lookup(key=str(key), namespace=ns, metadata_dict=met, content_type='json')
         ret.append(response['payload'])
 
-        if len(ret) == 1:
-            try:
-                print("Result outputs", response['payload'].encode('ascii', 'ignore'))
-            except Exception as detail:
-                print('The Jerakia lookup resulted in an empty response:', detail)
-        else:
-            try:
-                [x.encode('ascii', 'ignore') for x in ret]
-                print("Result outputs ", ret)
-            except Exception as detail:
-                print('The Jerakia lookup resulted in an empty response:', detail)
+        try:
+            print("Result outputs ", ret)
+        except Exception as detail:
+            print('The Jerakia lookup resulted in an empty response:', detail)
     else:
         print("Token not found in env var JERAKIA_TOKEN, aborting")
