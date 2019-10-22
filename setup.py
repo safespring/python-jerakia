@@ -25,8 +25,5 @@ setup(
         jerakia=jerakia.cli:main
         [root.plugins]
         plugin=jerakia.cli:main
-    ''',
-    extras_require = {
-        'kcli':  ["kcli"]
-    }
+    '''
 )
