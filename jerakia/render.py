@@ -1,53 +1,37 @@
 """
 lib for rendering jinja templates using Jerakia lookups
 """
-from __future__ import unicode_literals
-import sys
 import os
-import json
-from jinja2 import Environment, FileSystemLoader, Template
-from builtins import str
-from .client import Client,ClientError
-from jinja2.ext import Extension
+from jinja2 import Environment, FileSystemLoader
 
-jerakia = None
-metadata = None
 
-def render(template_path, jerakia_instance, metadata_dict, data, extensions=None, strict=False):
+def dolookup(jerakia_client, metadata, item):
+    """Retrieves the result from the Jerakia lookup"""
+    namespace, key = item.split('/')
+    response = jerakia_client.lookup(key=key,
+                                     namespace=namespace,
+                                     metadata_dict=metadata,
+                                     content_type='json')
+    return response['payload']
+
+
+def render(template_path, jerakia_instance, metadata_dict, extensions=None, strict=False):
     """Renders a jinja2 template using data looked up via Jerakia"""
-
-    global jerakia
-    jerakia = jerakia_instance
-    global metadata
-    metadata = metadata_dict
-
-    if extensions is None:
-        extensions = []
-    env = Environment(
-        loader=FileSystemLoader(os.path.dirname(template_path)),
-        extensions=extensions,
-        keep_trailing_newline=True,
-    )
+    extensions = extensions if extensions else []
+    env = Environment(loader=FileSystemLoader(os.path.dirname(template_path)),
+                      extensions=extensions,
+                      keep_trailing_newline=True)
     if strict:
         from jinja2 import StrictUndefined
         env.undefined = StrictUndefined
 
+    def lookup_tag(item):
+        """ Wrapper function around doLookup with fixed jerakia_client
+        and metadata values. Used for looking up data in templates."""
+        return dolookup(jerakia_instance, metadata_dict, item)
+
     env.globals['environ'] = os.environ.get
-    env.globals['retrieveJerakia'] = retrieveJerakia
+    env.globals['jerakia'] = lookup_tag
 
-    output = env.get_template(os.path.basename(template_path)).render(data)
+    output = env.get_template(os.path.basename(template_path)).render()
     return output
-
-def retrieveJerakia(item):
-    """Retrieves the result from the Jerakia lookup"""
-
-    global jerakia
-    global metadata
-    
-    lookuppath =item.split('/')
-    key = lookuppath.pop()
-    namespace = lookuppath
-    ret = []
-
-    response = jerakia.lookup(key=key, namespace=namespace, metadata_dict=metadata, content_type='json')
-    return response['payload']

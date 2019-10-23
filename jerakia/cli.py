@@ -120,8 +120,7 @@ def render(ctx, templatefile, outputfile):
     metadata = ctx.obj['metadata']
     rendered_data = template_render(templatefile,
                                     jerakia_instance=ctx.obj['client'],
-                                    metadata_dict=metadata,
-                                    data={})
+                                    metadata_dict=metadata)
 
     if not outputfile:
         outputfile = templatefile.split('.j2')[0]
