@@ -74,9 +74,6 @@ def main(ctx, token, port, host, protocol, type, policy, metadata, configfile):
     options_config = dict(token=token,port=port,host=host,version=1,protocol=protocol)
     combined_config = merge_dicts(config,options_config)
 
-    if not combined_config['token']:
-        raise ValueError("Token not found in env var JERAKIA_TOKEN, aborting")
-
     ctx.ensure_object(dict)
     ctx.obj['client'] = Client(**combined_config)
     ctx.obj['metadata'] = met

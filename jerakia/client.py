@@ -34,6 +34,8 @@ class Client(object):
     """Constructor."""
     def __init__(self, token, protocol='http', host='localhost', port=9843,
                  version=1):
+        if not token:
+            raise ValueError("No token found in configuration.")
         self.config = dict(token=token, protocol=protocol, host=host,
                            port=port, version=version)
         self._content_type = dict(json='application/json',
