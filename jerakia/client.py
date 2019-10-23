@@ -47,7 +47,7 @@ class Client(object):
         """Initialize jerakia object with a config file"""
         if os.path.isfile(configfile):
             with open(configfile, "r") as filename:
-                config = yaml.load(filename)
+                config = yaml.load(filename, Loader=yaml.SafeLoader)
         else:
             raise ClientError("""Unable to find configuration file
                     {}""".format(configfile))
