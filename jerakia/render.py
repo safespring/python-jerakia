@@ -36,7 +36,7 @@ def render(template_path, jerakia_instance, metadata_dict, data, extensions=None
     env.globals['retrieveJerakia'] = retrieveJerakia
 
     output = env.get_template(os.path.basename(template_path)).render(data)
-    return output.encode('utf-8')
+    return output
 
 def retrieveJerakia(item):
     """Retrieves the result from the Jerakia lookup"""
@@ -48,18 +48,6 @@ def retrieveJerakia(item):
     key = lookuppath.pop()
     namespace = lookuppath
     ret = []
-    response = jerakia.lookup(key=key, namespace=namespace, metadata_dict=metadata, content_type='json')
-    ret.append(response['payload'])
 
-    if len(ret) == 1:
-        try:
-            return str(response['payload'].encode('ascii', 'ignore'))
-        except Exception as detail:
-            print('The Jerakia lookup resulted in an empty response:', detail)
-    else:
-        try:
-            #[x.decode('utf-8', 'ignore') for x in ret]
-            [x.encode('ascii', 'ignore') for x in ret]
-            return ret
-        except Exception as detail:
-            print('The Jerakia lookup resulted in an empty response:', detail)
+    response = jerakia.lookup(key=key, namespace=namespace, metadata_dict=metadata, content_type='json')
+    return response['payload']

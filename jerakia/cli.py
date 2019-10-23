@@ -7,6 +7,7 @@ import six
 import click
 from os import walk
 from .client import Client,ClientError
+from jerakia.render import render as template_render
 from pkg_resources import iter_entry_points
 from click_plugins import with_plugins
 from distutils import dir_util # https://github.com/PyCQA/pylint/issues/73; pylint: disable=no-name-in-module
@@ -48,11 +49,6 @@ FORMATS = {
 }
 
 @click.group()
-def main():
-    """jerakia is a tool to perform hierarchical data lookups."""
-@main.command('lookup')
-@click.argument('namespace')
-@click.argument('key')
 @click.option('-T','--token', envvar='JERAKIA_TOKEN')
 @click.option('-P','--port', default='9843', envvar='JERAKIA_PORT')
 @click.option('-H','--host', default='localhost', envvar='JERAKIA_HOST')
@@ -61,7 +57,9 @@ def main():
 @click.option('-p','--policy')
 @click.option('-m','--metadata',required=False, multiple=True)
 @click.option('-i', '--configfile', type=click.Path(), default='$HOME/.jerakia/jerakia.yaml')
-def lookup(namespace,key,token,port,type,host,protocol,policy,metadata,configfile):
+@click.pass_context
+def main(ctx, token, port, host, protocol, type, policy, metadata, configfile):
+    """jerakia is a tool to perform hierarchical data lookups."""
     # Parse metadata options
     met = dict()
     for item in metadata:
@@ -76,18 +74,45 @@ def lookup(namespace,key,token,port,type,host,protocol,policy,metadata,configfil
     options_config = dict(token=token,port=port,host=host,version=1,protocol=protocol)
     combined_config = merge_dicts(config,options_config)
 
-    # Perform lookup
-    if (combined_config['token'] is not None):
-        jerakiaobj = Client(**combined_config)
-        ns = []
-        ret = []
-        ns.append(str(namespace))
-        response = jerakiaobj.lookup(key=str(key), namespace=ns, metadata_dict=met, content_type='json')
-        ret.append(response['payload'])
+    if not combined_config['token']:
+        raise ValueError("Token not found in env var JERAKIA_TOKEN, aborting")
 
-        try:
-            print("Result outputs ", ret)
-        except Exception as detail:
-            print('The Jerakia lookup resulted in an empty response:', detail)
-    else:
-        print("Token not found in env var JERAKIA_TOKEN, aborting")
+    ctx.ensure_object(dict)
+    ctx.obj['client'] = Client(**combined_config)
+    ctx.obj['metadata'] = met
+
+
+@main.command('lookup')
+@click.argument('namespace')
+@click.argument('key')
+@click.pass_context
+def lookup(ctx, namespace, key):
+    ret = []
+    ns = []
+    ns.append(str(namespace))
+    client = ctx.obj['client']
+    metadata = ctx.obj['metadata']
+    response =client.lookup(key=str(key), namespace=ns, metadata_dict=metadata, content_type='json')
+    ret.append(response['payload'])
+
+    try:
+        print("Result outputs ", ret)
+    except Exception as detail:
+        print('The Jerakia lookup resulted in an empty response:', detail)
+
+
+@main.command('render')
+@click.option('-f', '--templatefile', type=click.Path(), help='Path to template file')
+@click.option('-o', '--outputfile', type=click.Path(), help='Path to rendered file')
+@click.pass_context
+def render(ctx, templatefile, outputfile):
+    """ Render Jinja2 template file with Jerakia as data source"""
+    metadata = ctx.obj['metadata']
+    rendered_data = template_render(templatefile, jerakia_instance=ctx.obj['client'], metadata_dict=metadata, data={})
+
+    if not outputfile:
+        outputfile = templatefile.split('.j2')[0]
+
+    with open(outputfile, 'w') as rendered_template:
+        rendered_template.write(rendered_data)
+
