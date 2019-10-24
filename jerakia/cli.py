@@ -2,7 +2,7 @@
 import sys
 import os
 import click
-import yaml
+import yaml, json
 from jerakia.render import render as template_render
 from .client import Client
 
@@ -87,24 +87,33 @@ def main(ctx, token, port, host, protocol, metadata, configfile):
 
 
 @main.command('lookup')
+@click.option('--output',
+              type=click.Choice(['json', 'yaml']),
+              default='json',
+              help='Output format.',
+              envvar='JERAKIA_OUTPUT',
+              show_default=True)
 @click.argument('namespace')
-@click.argument('key')
+@click.argument('key', required=False, default=None)
 @click.pass_context
-def lookup(ctx, namespace, key):
+def lookup(ctx, namespace, key, output):
     """Return data from Jerakia lookup"""
     namespaces = []
     namespaces.append(str(namespace))
     client = ctx.obj['client']
     metadata = ctx.obj['metadata']
-    response = client.lookup(key=str(key),
+    response = client.lookup(key=key,
                              namespace=namespaces,
                              metadata_dict=metadata,
                              content_type='json')
 
     try:
-        print("Result outputs ", response['payload'])
+        if output == 'json':
+            print(json.dumps(response['payload']))
+        elif output == 'yaml':
+            print(yaml.safe_dump(response['payload'], sys.stdout, allow_unicode=True, default_flow_style=False))
     except Exception as detail:
-        print('The Jerakia lookup resulted in an empty response:', detail)
+            print('The Jerakia lookup resulted in an unknown response:', detail)
 
 
 @main.command('render')
