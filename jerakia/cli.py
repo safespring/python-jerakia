@@ -111,7 +111,7 @@ def lookup(ctx, namespace, key, output):
         if output == 'json':
             print(json.dumps(response['payload']))
         elif output == 'yaml':
-            print(yaml.safe_dump(response['payload'], sys.stdout, allow_unicode=True, default_flow_style=False))
+            print(yaml.safe_dump(response['payload'], allow_unicode=True, explicit_start=True, default_flow_style=False))
     except Exception as detail:
             print('The Jerakia lookup resulted in an unknown response:', detail)
 
