@@ -55,25 +55,17 @@ def merge_dicts(*dicts):
               help='Connection protocol',
               envvar='JERAKIA_PROTOCOL',
               show_default=True)
-@click.option('-m', '--metadata',
-              help='Lookup metadata',
-              required=False,
-              multiple=True)
-@click.option('-i', '--configfile',
+@click.option('-c', '--config-file',
               help='Path to Jerakia configuration file',
               type=click.Path(),
               default='$HOME/.jerakia/jerakia.yaml',
               show_default=True)
 @click.pass_context
-def main(ctx, token, port, host, protocol, metadata, configfile):
+def main(ctx, token, port, host, protocol, config_file):
     """jerakia is a tool to perform hierarchical data lookups."""
-    # Parse metadata options
-    met = dict()
-    for item in metadata:
-        met.update([item.split('=')])
     # Load configfile if exists
-    if os.path.exists(configfile):
-        with open(configfile, "r") as filename:
+    if os.path.exists(config_file):
+        with open(config_file, "r") as filename:
             config = yaml.load(filename, Loader=yaml.SafeLoader)
     # Merge dicts from cli args/env vars with config file
     else:
@@ -83,11 +75,15 @@ def main(ctx, token, port, host, protocol, metadata, configfile):
 
     ctx.ensure_object(dict)
     ctx.obj['client'] = Client(**combined_config)
-    ctx.obj['metadata'] = met
+    ctx.obj['metadata'] = dict()
 
 
 @main.command('lookup')
-@click.option('--output',
+@click.option('-m', '--metadata',
+              help='Lookup metadata',
+              required=False,
+              multiple=True)
+@click.option('-o','--output-format',
               type=click.Choice(['json', 'yaml']),
               default='json',
               help='Output format.',
@@ -96,43 +92,49 @@ def main(ctx, token, port, host, protocol, metadata, configfile):
 @click.argument('namespace')
 @click.argument('key', required=False, default=None)
 @click.pass_context
-def lookup(ctx, namespace, key, output):
+def lookup(ctx, metadata, namespace, key, output_format):
     """Return data from Jerakia lookup"""
     namespaces = []
     namespaces.append(str(namespace))
     client = ctx.obj['client']
+    for item in metadata:
+        ctx.obj['metadata'].update([item.split('=')])
     metadata = ctx.obj['metadata']
     response = client.lookup(key=key,
                              namespace=namespaces,
                              metadata_dict=metadata,
                              content_type='json')
 
-    try:
-        if output == 'json':
-            print(json.dumps(response['payload']))
-        elif output == 'yaml':
-            print(yaml.safe_dump(response['payload'], allow_unicode=True, explicit_start=True, default_flow_style=False))
-    except Exception as detail:
-            print('The Jerakia lookup resulted in an unknown response:', detail)
+    data = response['payload']
+    if output_format == 'json':
+        out = json.dumps(data)
+    elif output_format == 'yaml':
+        out = yaml.safe_dump(data, encoding=None, allow_unicode=True, default_flow_style=False)
+        # remove any trailing newline and document end outputs caused by safe_dump
+        out = out.rstrip().rstrip('...\n')
+    print(out)
 
 
-@main.command('render')
-@click.option('-f', '--templatefile',
-              type=click.Path(),
-              help='Path to template file')
-@click.option('-o', '--outputfile',
+@main.command('template')
+@click.option('-m', '--metadata',
+              help='Lookup metadata',
+              required=False,
+              multiple=True)
+@click.option('-o', '--output-file',
               type=click.Path(),
               help='Path to rendered file')
+@click.argument('template_file')
 @click.pass_context
-def render(ctx, templatefile, outputfile):
+def template(ctx, metadata, template_file, output_file):
     """ Render Jinja2 template file with Jerakia as data source"""
+    for item in metadata:
+        ctx.obj['metadata'].update([item.split('=')])
     metadata = ctx.obj['metadata']
-    rendered_data = template_render(templatefile,
+    rendered_data = template_render(template_file,
                                     jerakia_instance=ctx.obj['client'],
                                     metadata_dict=metadata)
 
-    if not outputfile:
-        outputfile = templatefile.split('.j2')[0]
-
-    with open(outputfile, 'w') as rendered_template:
+    if not output_file:
+        output_file = template_file.split('.j2')[0]
+    with open(output_file, 'w') as rendered_template:
         rendered_template.write(rendered_data)
